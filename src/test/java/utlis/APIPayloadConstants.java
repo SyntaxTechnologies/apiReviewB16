@@ -48,4 +48,13 @@ public class APIPayloadConstants {
     }
 
 
+
+    public static String updateEmployeePartiallyPayload(String empID,String key,String value){
+        JSONObject obj = new JSONObject();
+        obj.put("employee_id",empID);
+        obj.put(key, value);
+        return obj.toString();
+    }
+
+
 }

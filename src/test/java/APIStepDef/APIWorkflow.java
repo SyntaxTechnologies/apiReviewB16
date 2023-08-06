@@ -102,5 +102,24 @@ public class APIWorkflow {
 
     }
 
+    @Given("the request is prepared to update the employee firstname to {string}")
+    public void the_request_is_prepared_to_update_the_employee_firstname_to(String name) {
+        request=given().header(APIConstants.HEADER_CONTENT_TYPE_KEY,APIConstants.HEADER_CONTENT_TYPE_VALUE).header(APIConstants.HEADER_AUTHORIZATION_KEY,GenerateTokenStep.token)
+                .body(APIPayloadConstants.updateEmployeePartiallyPayload(employee_id,"emp_firstname",name));
+    }
+    @When("a PATCH call is made to update the employee")
+    public void a_patch_call_is_made_to_update_the_employee() {
+    response=request.patch(APIConstants.UPDATE_PARTIALLY_EMPLOYEE_URI);
+    }
+    @Then("the status code is {int}")
+    public void the_status_code_is(Integer code) {
+    response.then().assertThat().statusCode(code);
+    response.prettyPrint();
+    }
+    @Then("the employee updated has the updated firstname {string}")
+    public void the_employee_updated_has_the_updated_firstname(String name) {
+        String actualName = response.jsonPath().getString("employee.emp_firstname");
+        Assert.assertEquals(actualName,name);
+    }
 
 }
