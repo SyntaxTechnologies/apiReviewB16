@@ -3,9 +3,16 @@ package APIStepDef;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.cucumber.java.it.Ma;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.apiguardian.api.API;
 import org.junit.Assert;
+import utlis.APIConstants;
+import utlis.APIPayloadConstants;
+
+import java.util.List;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -16,21 +23,14 @@ public class APIWorkflow {
     public static String employee_id;
     @Given("a request is prepared for creating an employee")
     public void a_request_is_prepared_for_creating_an_employee() {
-        request = given().header("Content-Type","application/json").
-                header("Authorization", GenerateTokenStep.token).body("{\n" +
-                        "  \"emp_firstname\": \"justin\",\n" +
-                        "  \"emp_lastname\": \"azzuri\",\n" +
-                        "  \"emp_middle_name\": \"ms\",\n" +
-                        "  \"emp_gender\": \"M\",\n" +
-                        "  \"emp_birthday\": \"2000-07-21\",\n" +
-                        "  \"emp_status\": \"happy\",\n" +
-                        "  \"emp_job_title\": \"QA\"\n" +
-                        "}");
+        request = given().header(APIConstants.HEADER_CONTENT_TYPE_KEY,APIConstants.HEADER_CONTENT_TYPE_VALUE).
+                header(APIConstants.HEADER_AUTHORIZATION_KEY, GenerateTokenStep.token)
+                .body(APIPayloadConstants.createEmployeePayload());
     }
 
     @When("a POST call is made to create an employee")
     public void a_post_call_is_made_to_create_an_employee() {
-        response = request.when().post("/createEmployee.php");
+        response = request.when().post(APIConstants.CREATE_EMPLOYEE_URI);
         response.prettyPrint();
     }
 
@@ -54,4 +54,53 @@ public class APIWorkflow {
         employee_id = response.jsonPath().getString(empId);
         System.out.println(employee_id);
     }
+
+//    ----------------------------------------------------------------------
+//    -----------------------------------------------------------------
+
+
+    @Given("a request is prepared for retrieving an employee")
+    public void a_request_is_prepared_for_retrieving_an_employee() {
+        request=given().header(APIConstants.HEADER_CONTENT_TYPE_KEY,APIConstants.HEADER_CONTENT_TYPE_VALUE).header(APIConstants.HEADER_AUTHORIZATION_KEY,GenerateTokenStep.token)
+                .queryParam("employee_id",employee_id);
+
+    }
+    @When("a GET call is made to retrieve the employee")
+    public void a_get_call_is_made_to_retrieve_the_employee() {
+       response=request.when().get(APIConstants.GET_ONE_EMPLOYEE_URI);
+    }
+    @Then("the status code for this employee is {int}")
+    public void the_status_code_for_this_employee_is(int statuscde) {
+        response.then().assertThat().statusCode(statuscde);
+
+    }
+    @Then("the employee id {string} matches the globally stored id")
+    public void the_employee_id_matches_the_globally_stored_id(String emp_id) {
+        String actual_empID = response.jsonPath().getString(emp_id);
+        Assert.assertEquals(employee_id,actual_empID);
+    }
+    @Then("the employee information under the key {string} matches the data used to create the employee")
+    public void the_employee_information_under_the_key_matches_the_data_used_to_create_the_employee(String employeeObject, io.cucumber.datatable.DataTable dataTable) {
+        List<Map<String,String>> expectedData=dataTable.asMaps();
+        String expectedFirstName=null;
+        String expectedLastName=null;
+        for(Map<String,String>map :expectedData){
+//            extract all the values of expected data from the data table
+             expectedFirstName = map.get("emp_firstname");
+              expectedLastName = map.get("emp_lastname");
+        }
+
+//        extract all the values from the response
+        String actualFirstname=response.jsonPath().getString("employee.emp_firstname");
+      String  actualLastName=response.jsonPath().getString("employee.emp_lastname");
+
+
+//        asseert them
+
+        Assert.assertEquals(actualFirstname,expectedFirstName);
+        Assert.assertEquals(actualLastName,expectedLastName);
+
+    }
+
+
 }
